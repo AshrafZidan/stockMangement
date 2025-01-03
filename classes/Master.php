@@ -198,19 +198,36 @@ Class Master extends DBConnection {
 
 					foreach($item_id as $k =>$v){
 						if(!empty($data)) $data .=", ";
-						// $this->conn->query("DELETE FROM `stock_list` WHERE item_id = '{$v}'");
-
 						if (empty($id)) {
 							$sql = "INSERT INTO stock_list (`item_id`,`quantity`,`price`,`unit`,`total`,`type`) VALUES ('{$v}','{$qty[$k]}','{$price[$k]}','{$unit[$k]}','{$total[$k]}','1')";
 							$this->conn->query($sql);
 							$stock_ids[] = $this->conn->insert_id;
 							}
 							else{
-							$quantity_diff = $qty[$k] - $old_qty[$k]; // حساب الفرق في الكمية
-							if ($quantity_diff > 0) {
-								$sql = "UPDATE  stock_list SET quantity=quantity+{$quantity_diff} where item_id = {$v} And type = 1 LIMIT 1";
-								$this->conn->query($sql);								
+
+							// Check if the item exists in the `stock_list`
+							$checkItemSql = "SELECT * FROM stock_list WHERE item_id = '{$v}' AND type = 1 LIMIT 1";
+							$checkItem = $this->conn->query($checkItemSql);
+
+							if ($checkItem && $checkItem->num_rows > 0) {
+									$quantity_diff = $qty[$k] - $old_qty[$k];
+									if ($quantity_diff > 0) {
+										$sql = "UPDATE stock_list 
+												SET quantity = quantity + {$quantity_diff} 
+												WHERE item_id = '{$v}' AND type = 1 
+												LIMIT 1";
+										$this->conn->query($sql);
+									}
+							
 							}
+							else
+							{
+								$sql = "INSERT INTO stock_list (`item_id`, `quantity`, `price`, `unit`, `total`, `type`) 
+										VALUES ('{$v}', '{$qty[$k]}', '{$price[$k]}', '{$unit[$k]}', '{$total[$k]}', '1')";
+								$this->conn->query($sql);
+								$stock_ids[] = $this->conn->insert_id;
+							}
+		
 							}
 						
 						// if($qty[$k] < $oqty[$k]){
@@ -225,9 +242,9 @@ Class Master extends DBConnection {
 		}
 		if($resp['status'] == 'success'){
 			if(empty($id)){
-				$this->settings->set_flashdata('success'," New Purchase Order was Successfully created.");
+				$this->settings->set_flashdata('success'," تم اضافة فاتورة جديدة بنجاح.");
 			}else{
-				$this->settings->set_flashdata('success'," Purchase Order's Details Successfully updated.");
+				$this->settings->set_flashdata('success'," تم تعديل الفاتورة بنجاح.");
 			}
 		}
 	
@@ -574,119 +591,7 @@ Class Master extends DBConnection {
 		return json_encode($resp);
 
 	}
-	function save_sale2() {
-		// Generate a sales code if not provided
-		if (empty($_POST['id'])) {
-			$prefix = "SALE";
-			$code = sprintf("%'.04d", 1);
-			while (true) {
-				$check_code = $this->conn->query("SELECT * FROM `sales_list` WHERE sales_code = '".$prefix.'-'.$code."'")->num_rows;
-				if ($check_code > 0) {
-					$code = sprintf("%'.04d", $code + 1);
-				} else {
-					break;
-				}
-			}
-			$_POST['sales_code'] = $prefix . "-" . $code;
-		}
-	
-		extract($_POST);
-		$data = "";
 
-		
-	
-		// Validate stock availability for all items
-		foreach ($item_id as $k => $v) {
-			if (empty($v)) {
-				die("Error: Missing item ID for one of the entries.");
-			}
-	
-			// Calculate total available stock
-			$in_query = $this->conn->query("SELECT SUM(quantity) as total FROM stock_list WHERE item_id = '{$v}' AND type = '1'");
-			$out_query = $this->conn->query("SELECT SUM(quantity) as total FROM stock_list WHERE item_id = '{$v}' AND type = '2'");
-	
-			if (!$in_query || !$out_query) {
-				die("Error in stock query: " . $this->conn->error);
-			}
-	
-			$in_quantity = $in_query->fetch_assoc()['total'] ?? 0;
-			$out_quantity = $out_query->fetch_assoc()['total'] ?? 0;
-			$available_quantity = $in_quantity - $out_quantity;
-
-			
-	
-			// Fetch item name for error messages
-			$item_query = $this->conn->query("SELECT name FROM `item_list` WHERE id = '{$v}'");
-			if (!$item_query) {
-				die("Error in item query: " . $this->conn->error);
-			}
-			$item_name = $item_query->fetch_assoc()['name'] ?? "Unknown Item";
-	
-			// Check if requested quantity exceeds available stock
-			if ($qty[$k] > $available_quantity) {
-				$resp['status'] = 'failed';
-				$resp['msg'] = "الكميه من المنتج '{$item_name}' اكبر من الموجود بالمخزن. المتاح: {$available_quantity}, المطلوب: {$qty[$k]}";
-				return json_encode($resp);
-			}
-		}
-	
-		// Prepare sales list data
-		foreach ($_POST as $k => $v) {
-			if (!in_array($k, array('id')) && !is_array($_POST[$k])) {
-				$v = $this->conn->real_escape_string($v);
-				$data .= (!empty($data) ? ", " : "") . "`{$k}` = '{$v}'";
-			}
-		}
-	
-		// Insert or update sales record
-		if (empty($id)) {
-			$sql = "INSERT INTO `sales_list` SET {$data}";
-		} else {
-			$sql = "UPDATE `sales_list` SET {$data} WHERE id = '{$id}'";
-		}
-		$save = $this->conn->query($sql);
-	
-		if ($save) {
-			$resp['status'] = 'success';
-			$sale_id = empty($id) ? $this->conn->insert_id : $id;
-			$resp['id'] = $sale_id;
-	
-			// Process stock deduction
-			$sids = array();
-			foreach ($item_id as $k => $v) {
-				// Deduct stock (Ensure this only affects rows with sufficient stock)
-				$deduct = $this->conn->query("UPDATE `stock_list` SET quantity = quantity  WHERE item_id = '{$v}' AND quantity >= {$qty[$k]} LIMIT 1");
-	
-				// Log sale in stock_list
-				$sql = "INSERT INTO `stock_list` SET item_id='{$v}', `quantity` = '{$qty[$k]}', `price` = '{$price[$k]}', `total` = '{$total[$k]}', `type` = 2";
-				$save = $this->conn->query($sql);
-	
-				if ($save) {
-					$sids[] = $this->conn->insert_id;
-				} else {
-					$resp['status'] = 'failed';
-					$resp['msg'] = "Error in stock log: " . $this->conn->error;
-					return json_encode($resp);
-				}
-			}
-	
-			// Update sales record with stock IDs
-			$sids = implode(',', $sids);
-			$this->conn->query("UPDATE `sales_list` SET stock_ids = '{$sids}' WHERE id = '{$sale_id}'");
-		} else {
-			$resp['status'] = 'failed';
-			$resp['msg'] = 'An error occurred: ' . $this->conn->error;
-		}
-	
-		// Flash message on success
-		if ($resp['status'] == 'success') {
-			$msg = empty($id) ? "New Sales Record was successfully created." : "Sales Record successfully updated.";
-			$this->settings->set_flashdata('success', $msg);
-		}
-	
-		return json_encode($resp);
-	}
-	
 
 	function save_sale() {
 		// Check if we are adding a new sale or updating an existing one
@@ -805,7 +710,7 @@ Class Master extends DBConnection {
 	
 		// Flash message on success
 		if ($resp['status'] == 'success') {
-			$msg = "New Sales Record was successfully created.";
+			$msg = "تم اضافة فاتورة جديدة بنجاح.";
 			$this->settings->set_flashdata('success', $msg);
 		}
 	
@@ -813,265 +718,6 @@ Class Master extends DBConnection {
 	}
 
 	
-
-	
-	// function save_sale_edit() {
-	// 	extract($_POST);
-	// 	$resp = array();
-	
-	// 	if (empty($id)) {
-	// 		$resp['status'] = 'failed';
-	// 		$resp['msg'] = 'Sale ID is missing.';
-	// 		return json_encode($resp);
-	// 	}
-	
-	// 	$data = "";
-	
-	// 	// Prepare data for update (excluding id)
-	// 	foreach ($_POST as $k => $v) {
-	// 		if (!in_array($k, array('id')) && !is_array($v)) {
-	// 			$v = $this->conn->real_escape_string($v);
-	// 			$data .= (!empty($data) ? ", " : "") . "`{$k}` = '{$v}'";
-	// 		}
-	// 	}
-	
-	// 	if (empty($data)) {
-	// 		$resp['status'] = 'failed';
-	// 		$resp['msg'] = 'No data to update.';
-	// 		return json_encode($resp);
-	// 	}
-	
-	// 	// Update the sales record in the sales_list table
-	// 	$sql = "UPDATE `sales_list` SET {$data} WHERE id = '{$id}'";
-	// 	$update = $this->conn->query($sql);
-	
-	// 	if (!$update) {
-	// 		$resp['status'] = 'failed';
-	// 		$resp['msg'] = "Error updating sales_list: " . $this->conn->error;
-	// 		return json_encode($resp);
-	// 	}
-	
-	// 	// Check for changes in the quantity field
-	// 	if (isset($item_id) && isset($qty) && isset($old_qty)) {
-	// 		foreach ($item_id as $k => $v) {
-	// 			$quantity_diff = $qty[$k] - $old_qty[$k]; // Calculate difference
-	
-	// 			if ($quantity_diff != 0) { // If quantity has changed
-	// 				// Update quantity in the sales_list table
-	// 				$sql = "UPDATE `sales_list` SET quantity = '{$qty[$k]}' WHERE id = '{$id}' AND item_id = '{$v}'";
-	// 				$this->conn->query($sql);
-	// 			}
-	
-	// 			// Check available stock
-	// 			$in_query = $this->conn->query("SELECT SUM(quantity) as total FROM stock_list WHERE item_id = '{$v}' AND type = '1'");
-	// 			$out_query = $this->conn->query("SELECT SUM(quantity) as total FROM stock_list WHERE item_id = '{$v}' AND type = '2'");
-	
-	// 			if (!$in_query || !$out_query) {
-	// 				die("Error in stock query: " . $this->conn->error);
-	// 			}
-	
-	// 			$in_quantity = $in_query->fetch_assoc()['total'] ?? 0;
-	// 			$out_quantity = $out_query->fetch_assoc()['total'] ?? 0;
-	// 			$available_quantity = $in_quantity - $out_quantity;
-	
-	// 			if ($quantity_diff > 0) {
-	// 				// If the quantity is increased, check if there's enough stock
-	// 				if ($quantity_diff > $available_quantity) {
-	// 					$resp['status'] = 'failed';
-	// 					$resp['msg'] = "The quantity for product '{$v}' exceeds available stock. Available: {$available_quantity}, Requested: {$quantity_diff}";
-	// 					return json_encode($resp);
-	// 				}
-	
-	// 				// Insert into stock log (sale)
-	// 				$sql = "INSERT INTO `stock_list` (item_id, quantity, price, total, type) 
-	// 						VALUES ('{$v}', {$quantity_diff}, '{$price[$k]}', '{$total[$k]}', 2)";
-	// 				$save = $this->conn->query($sql);
-	
-	// 				if (!$save) {
-	// 					$resp['status'] = 'failed';
-	// 					$resp['msg'] = "Error inserting stock log: " . $this->conn->error;
-	// 					return json_encode($resp);
-	// 				}
-	
-	// 				$sids[] = $this->conn->insert_id;
-	// 			} else if ($quantity_diff < 0) {
-	// 				// If the quantity is decreased, we need to return the stock
-	// 				$quantity_to_return = abs($quantity_diff); // Get the positive quantity to return
-	// 				// Insert into stock log (return stock)
-	// 				$sql = "INSERT INTO `stock_list` (item_id, quantity, price, total, type) 
-	// 						VALUES ('{$v}', {$quantity_to_return}, '{$price[$k]}', '{$total[$k]}', 1)"; // Type '1' for restocking
-	// 				$save = $this->conn->query($sql);
-	
-	// 				if (!$save) {
-	// 					$resp['status'] = 'failed';
-	// 					$resp['msg'] = "Error inserting stock log: " . $this->conn->error;
-	// 					return json_encode($resp);
-	// 				}
-	
-	// 				$sids[] = $this->conn->insert_id;
-	// 			}
-	// 		}
-	// 	}
-	
-	// 	// Update stock_ids in sales_list if stock log entries exist
-	// 	if (!empty($sids)) {
-	// 		$sids = implode(',', $sids);
-	// 		$this->conn->query("UPDATE `sales_list` SET stock_ids = '{$sids}' WHERE id = '{$id}'");
-	// 	}
-	
-	// 	$resp['status'] = 'success';
-	// 	return json_encode($resp);
-	// }
-	
-	
-	// function save_sale_edit() {
-	// 	extract($_POST);
-	// 	$resp = array();
-	
-	// 	if (empty($id)) {
-	// 		$resp['status'] = 'failed';
-	// 		$resp['msg'] = 'Sale ID is missing.';
-	// 		return json_encode($resp);
-	// 	}
-	
-	// 	$data = "";
-	
-	// 	// Prepare data for update (excluding id)
-	// 	foreach ($_POST as $k => $v) {
-	// 		if (!in_array($k, array('id')) && !is_array($v)) {
-	// 			$v = $this->conn->real_escape_string($v);
-	// 			$data .= (!empty($data) ? ", " : "") . "`{$k}` = '{$v}'";
-	// 		}
-	// 	}
-	
-	// 	if (empty($data)) {
-	// 		$resp['status'] = 'failed';
-	// 		$resp['msg'] = 'No data to update.';
-	// 		return json_encode($resp);
-	// 	}
-	
-	// 	// Update the sales record in the sales_list table
-	// 	$sql = "UPDATE `sales_list` SET {$data} WHERE id = '{$id}'";
-	// 	$update = $this->conn->query($sql);
-	
-	// 	if (!$update) {
-	// 		$resp['status'] = 'failed';
-	// 		$resp['msg'] = "Error updating sales_list: " . $this->conn->error;
-	// 		return json_encode($resp);
-	// 	}
-	
-	// 	// Check for row removals (removed_qty will be passed for rows to be removed)
-	// 	if (isset($removed_qty) && !empty($removed_qty)) {
-	// 		foreach ($removed_qty as $k => $v) {
-	// 			$item_id = $removed_item_id[$k]; // Get the item id from removed items
-	// 			$removed_quantity = $v; // Get the quantity to return to stock
-				
-	// 			// Insert into stock log (return stock)
-	// 			$sql = "INSERT INTO `stock_list` (item_id, quantity, price, total, type) 
-	// 					VALUES ('{$item_id}', {$removed_quantity}, '{$price[$k]}', '{$total[$k]}', 1)"; // Type '1' for restocking
-	// 			$save = $this->conn->query($sql);
-			
-
-	// 			if (!$save) {
-	// 				$resp['status'] = 'failed';
-	// 				$resp['msg'] = "Error inserting stock log for removal: " . $this->conn->error;
-	// 				return json_encode($resp);
-	// 			}
-	// 			$sids = [];
-	// 			$sids[] = $this->conn->insert_id; // Add stock log ID to $sids
-				
-				
-
-	// 			if (!empty($sids) && count($sids) == 1) {
-	// 				// Case: Only one stock ID, remove the entire row
-	// 				$sids_str = implode(',', $sids); // Convert $sids array to a string
-
-					
-				
-
-	// 				$sql = "UPDATE `sales_list` 
-	// 				SET stock_ids = TRIM(BOTH ',' FROM REPLACE(CONCAT(',', stock_ids, ','), ',{$sids_str},', ',')) 
-	// 				WHERE id = '{$id}' AND FIND_IN_SET('{$sids_str}', stock_ids) > 0";
-	// 				$this->conn->query($sql);
-	// 				$resp['status'] = 'failed';
-	// 				$resp['msg'] = "{$sids_str} " . $this->conn->error;
-	// 				return json_encode($resp);
-	// 			}
-				
-	// 		}
-	// 	}
-	
-	// 	// Check for changes in the quantity field (non-removed items)
-	// 	if (isset($item_id) && isset($qty) && isset($old_qty)) {
-	// 		foreach ($item_id as $k => $v) {
-	// 			$quantity_diff = $qty[$k] - $old_qty[$k]; // Calculate difference
-	
-	// 			if ($quantity_diff != 0) { // If quantity has changed
-	// 				// Update quantity in the sales_list table
-	// 				$sql = "UPDATE `sales_list` SET quantity = '{$qty[$k]}' WHERE id = '{$id}' AND item_id = '{$v}'";
-	// 				$this->conn->query($sql);
-	// 			}
-	
-	// 			// Check available stock
-	// 			$in_query = $this->conn->query("SELECT SUM(quantity) as total FROM stock_list WHERE item_id = '{$v}' AND type = '1'");
-	// 			$out_query = $this->conn->query("SELECT SUM(quantity) as total FROM stock_list WHERE item_id = '{$v}' AND type = '2'");
-	
-	// 			if (!$in_query || !$out_query) {
-	// 				die("Error in stock query: " . $this->conn->error);
-	// 			}
-	
-	// 			$in_quantity = $in_query->fetch_assoc()['total'] ?? 0;
-	// 			$out_quantity = $out_query->fetch_assoc()['total'] ?? 0;
-	// 			$available_quantity = $in_quantity - $out_quantity;
-	
-	// 			if ($quantity_diff > 0) {
-	// 				// If the quantity is increased, check if there's enough stock
-	// 				if ($quantity_diff > $available_quantity) {
-	// 					$resp['status'] = 'failed';
-	// 					$resp['msg'] = "The quantity for product '{$v}' exceeds available stock. Available: {$available_quantity}, Requested: {$quantity_diff}";
-	// 					return json_encode($resp);
-	// 				}
-	
-	// 				// Insert into stock log (sale)
-	// 				$sql = "INSERT INTO `stock_list` (item_id, quantity, price, total, type) 
-	// 						VALUES ('{$v}', {$quantity_diff}, '{$price[$k]}', '{$total[$k]}', 2)";
-	// 				$save = $this->conn->query($sql);
-	
-	// 				if (!$save) {
-	// 					$resp['status'] = 'failed';
-	// 					$resp['msg'] = "Error inserting stock log: " . $this->conn->error;
-	// 					return json_encode($resp);
-	// 				}
-	
-	// 				$sids[] = $this->conn->insert_id;
-	// 			} else if ($quantity_diff < 0) {
-	// 				// If the quantity is decreased, we need to return the stock
-	// 				$quantity_to_return = abs($quantity_diff); // Get the positive quantity to return
-	// 				// Insert into stock log (return stock)
-	// 				$sql = "INSERT INTO `stock_list` (item_id, quantity, price, total, type) 
-	// 						VALUES ('{$v}', {$quantity_to_return}, '{$price[$k]}', '{$total[$k]}', 1)"; // Type '1' for restocking
-	// 				$save = $this->conn->query($sql);
-	
-	// 				if (!$save) {
-	// 					$resp['status'] = 'failed';
-	// 					$resp['msg'] = "Error inserting stock log: " . $this->conn->error;
-	// 					return json_encode($resp);
-	// 				}
-	
-	// 				$sids[] = $this->conn->insert_id;
-	// 			}
-	// 		}
-	// 	}
-	
-	// 	// Update stock_ids in sales_list if stock log entries exist
-	// 	if (!empty($sids)) {
-	// 		$sids = implode(',', $sids);
-	// 		$this->conn->query("UPDATE `sales_list` SET stock_ids = '{$sids}' WHERE id = '{$id}'");
-	// 	}
-	
-	// 	$resp['status'] = 'success';
-	// 	return json_encode($resp);
-	// }
 
 	function save_sale_edit() {
 		extract($_POST);
@@ -1302,6 +948,71 @@ Class Master extends DBConnection {
 		return json_encode($resp);
 
 	}
+
+	function edit_items_supplier_price() {
+		extract($_POST); // استخراج القيم من POST
+	
+		$supplier_id = isset($supplier_id) ? $this->conn->real_escape_string($supplier_id) : null;
+		$adjustment_type = isset($adjustment_type) ? $this->conn->real_escape_string($adjustment_type) : null; // زيادة أو نقصان
+		$adjustment_value = isset($adjustment_value) ? $this->conn->real_escape_string($adjustment_value) : null; // النسبة أو القيمة
+		$adjustment_unit = isset($adjustment_unit) ? $this->conn->real_escape_string($adjustment_unit) : null; // النسبة % أو الجنيه
+	
+		if (!$supplier_id || !$adjustment_type || !$adjustment_value || !$adjustment_unit) {
+			$resp['status'] = 'failed';
+			$resp['msg'] = "All inputs are required. {$supplier_id} --  {$adjustment_type}  -- {$adjustment_value} -- {$adjustment_unit}";
+			return json_encode($resp);
+			exit;
+		}
+	
+	
+		if (!is_numeric($adjustment_value) || $adjustment_value <= 0) {
+			$resp['status'] = 'failed';
+			$resp['msg'] = "القيمه يجب ان تكون اكبر من 0.";
+			return json_encode($resp);
+			exit;
+		}
+	
+		// Fetch all products for the selected supplier
+		$qry = $this->conn->query("SELECT * FROM `item_list` WHERE `supplier_id` = '{$supplier_id}'");
+		if ($qry->num_rows == 0) {
+			$resp['status'] = 'failed';
+			$resp['msg'] = "لا توجد منتجات لهذا المورد ";
+			return json_encode($resp);
+			exit;
+		}
+	
+		// تحديد العملية (زيادة أو نقصان)
+		$operation = $adjustment_type == 'increase' ? '+' : '-';
+	
+		// تحديد نوع التعديل (نسبة مئوية أو قيمة)
+		if ($adjustment_unit == 'percentage') {
+			// تعديل بالنسبة المئوية
+			$sql = "UPDATE `item_list` 
+					SET `cost` = `cost` * (1 {$operation} ({$adjustment_value} / 100)), 
+						`consumer_price` = `consumer_price` * (1 {$operation} ({$adjustment_value} / 100)) 
+					WHERE `supplier_id` = '{$supplier_id}'";
+		} else {
+			// تعديل بالجنيه
+			$sql = "UPDATE `item_list` 
+					SET `cost` = `cost` {$operation} {$adjustment_value}, 
+						`consumer_price` = `consumer_price` {$operation} {$adjustment_value} 
+					WHERE `supplier_id` = '{$supplier_id}'";
+		}
+		
+	
+		// تنفيذ التعديل
+		$update = $this->conn->query($sql);
+	
+		if ($update) {
+			$resp['status'] = 'success';
+			$resp['msg'] = "تم التعديل بنجاح.";
+		} else {
+			$resp['status'] = 'failed';
+			$resp['msg'] = "فشل التعديل: " . $this->conn->error;
+		}
+	
+		return json_encode($resp);
+	}
 }
 
 $Master = new Master();
@@ -1310,6 +1021,9 @@ $sysset = new SystemSettings();
 switch ($action) {
 	case 'save_supplier':
 		echo $Master->save_supplier();
+	break;
+	case 'edit_items_supplier_price':
+		echo $Master->edit_items_supplier_price();
 	break;
 	case 'delete_supplier':
 		echo $Master->delete_supplier();
