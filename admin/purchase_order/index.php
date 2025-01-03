@@ -12,8 +12,8 @@
                     <colgroup>
                         <col width="5%">
                         <col width="15%">
-                        <col width="20%">
-                        <col width="20%">
+                        <col width="10%">
+                        <col width="25%">
                         <col width="10%">
                         <col width="10%">
                         <col width="10%">
@@ -63,7 +63,7 @@
                                     </button>
                                     <div class="dropdown-menu" role="menu">
 
-                                        <div class="dropdown-divider"></div>
+                                        <!-- <div class="dropdown-divider"></div> -->
                                         <a class="dropdown-item" href="<?php echo base_url.'admin?page=purchase_order/view_po&id='.$row['id'] ?>" data-id="<?php echo $row['id'] ?>"><span class="fa fa-eye text-dark"></span> عرض</a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="<?php echo base_url.'admin?page=purchase_order/manage_po&id='.$row['id'] ?>" data-id="<?php echo $row['id'] ?>"><span class="fa fa-edit text-primary"></span> تعديل</a>

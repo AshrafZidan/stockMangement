@@ -10,10 +10,12 @@
         <div class="container-fluid">
 			<table data-page-length='100' class="table table-bordered table-stripped">
                     <colgroup>
+           
+
                         <col width="5%">
-                        <col width="15%">
-                        <col width="25%">
-                        <col width="25%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="40%">
                         <col width="10%">
                         <col width="10%">
                     </colgroup>
@@ -49,8 +51,8 @@
                                         <a class="dropdown-item" href="<?php echo base_url.'admin?page=return/view_return&id='.$row['id'] ?>" data-id="<?php echo $row['id'] ?>"><span class="fa fa-eye text-dark"></span> عرض</a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="<?php echo base_url.'admin?page=return/manage_return&id='.$row['id'] ?>" data-id="<?php echo $row['id'] ?>"><span class="fa fa-edit text-primary"></span> تعديل</a>
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item delete_data" href="javascript:void(0)" data-id="<?php echo $row['id'] ?>"><span class="fa fa-trash text-danger"></span> مسح</a>
+                                        <!-- <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item delete_data" href="javascript:void(0)" data-id="<?php echo $row['id'] ?>"><span class="fa fa-trash text-danger"></span> مسح</a> -->
                                     </div>
                                 </td>
                             </tr>

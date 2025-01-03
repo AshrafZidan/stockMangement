@@ -226,6 +226,11 @@ body.ar table.dataTable>thead .sorting:before,body.ar  table.dataTable>thead .so
     left: 1em;
     right: auto;
 }
+body.ar .modal-footer{
+    justify-content: flex-start;
+
+}
+body.ar .form-check-label{margin-right: 1.25rem;}
   @media (min-width: 768px) {
     body.ar.sidebar-mini-md .content-wrapper,
     body.ar.sidebar-mini-md .main-footer,

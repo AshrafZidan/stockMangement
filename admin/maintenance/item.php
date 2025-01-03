@@ -3,6 +3,10 @@
 		<h3 class="card-title">المنتجات</h3>
 		<div class="card-tools">
 			<a href="javascript:void(0)" id="create_new" class="btn btn-flat btn-primary"><span class="fas fa-plus"></span>  اضافة جـديد</a>
+			<a href="javascript:void(0)" id="edit_item_price" class="btn  btn-outline-secondary"><span class="fas fa-dollar-sign"></span>  تعديل اسعار منتجات </a>
+
+
+			
 		</div>
 	</div>
 	<div class="card-body">
@@ -12,11 +16,11 @@
 				<colgroup>
 					<col width="5%">
 					<col width="10%">
-					<col width="25%">
-					<col width="20%">
-					<col width="15%">
-					<col width="15%">
-					<col width="15%">
+					<col width="30%">
+					<col width="30%">
+					<col width="10%">
+					<col width="10%">
+					<col width="10%">
 					<col width="20%">
 				</colgroup>
 				<thead>
@@ -87,6 +91,9 @@
 			uni_modal("<i class='fa fa-box'></i> تفاصيل المنتج","maintenance/view_item.php?id="+$(this).attr('data-id'),"")
 		})
 		$('.table td,.table th').addClass('py-1 px-2 align-middle')
+		$('#edit_item_price').click(function(){
+			uni_modal("<i class='fa fa-dollar-sign'></i> تعديل اسعار منتجات  ","maintenance/edit_item_price.php","mid-large")
+		})
 		$('.table').dataTable();
 	})
 	function delete_category($id){

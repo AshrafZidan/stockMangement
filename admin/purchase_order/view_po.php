@@ -27,17 +27,19 @@ if($qry->num_rows >0){
             <h4 class="text-info">المنتجات</h4>
             <table class="table table-striped table-bordered" id="list">
                 <colgroup>
-                    <col width="10%">
-                    <col width="10%">
-                    <col width="30%">
-                    <col width="25%">
-                    <col width="25%">
+            
+
+                        <col width="40%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="10%">
                 </colgroup>
                 <thead>
                     <tr class="text-light bg-navy">
-                        <th class="text-center py-1 px-2">الكمية</th>
-                        <th class="text-center py-1 px-2">الوحدة</th>
                         <th class="text-center py-1 px-2">المنتج</th>
+                        <th class="text-center py-1 px-2">الوحدة</th>
+                        <th class="text-center py-1 px-2">الكمية</th>
                         <th class="text-center py-1 px-2">التكلفة</th>
                         <th class="text-center py-1 px-2">الاجمالى</th>
                     </tr>
@@ -50,12 +52,14 @@ if($qry->num_rows >0){
                         $total += $row['total']
                     ?>
                     <tr>
-                        <td class="py-1 px-2 text-center"><?php echo number_format($row['quantity'],2) ?></td>
-                        <td class="py-1 px-2 text-center"><?php echo ($row['unit']) ?></td>
-                        <td class="py-1 px-2">
+                    <td class="py-1 px-2">
                             <?php echo $row['name'] ?> <br>
                             <?php echo $row['description'] ?>
                         </td>
+
+                        <td class="py-1 px-2 text-center"><?php echo ($row['unit']) ?></td>
+                        <td class="py-1 px-2 text-center"><?php echo number_format($row['quantity'],2) ?></td>
+                      
                         <td class="py-1 px-2 text-right"><?php echo number_format($row['price']) ?></td>
                         <td class="py-1 px-2 text-right"><?php echo number_format($row['total']) ?></td>
                     </tr>
@@ -117,6 +121,11 @@ if($qry->num_rows >0){
         <td class="py-1 px-2 text-center">
             <button class="btn btn-outline-danger btn-sm rem_row" type="button"><i class="fa fa-times"></i></button>
         </td>
+        <td class="py-1 px-2 item">
+        </td>
+
+        <td class="py-1 px-2 text-center unit"></td>
+
         <td class="py-1 px-2 text-center qty">
             <span class="visible"></span>
             <input type="hidden" name="item_id[]">
@@ -125,10 +134,8 @@ if($qry->num_rows >0){
             <input type="hidden" name="price[]">
             <input type="hidden" name="total[]">
         </td>
-        <td class="py-1 px-2 text-center unit">
-        </td>
-        <td class="py-1 px-2 item">
-        </td>
+      
+
         <td class="py-1 px-2 text-right cost">
         </td>
         <td class="py-1 px-2 text-right total">

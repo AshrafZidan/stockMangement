@@ -28,15 +28,16 @@ if($qry->num_rows >0){
             <h4 class="text-info">المنتجات</h4>
             <table class="table table-striped table-bordered" id="list">
                 <colgroup>
+                    <col width="40%">
                     <col width="10%">
-                    <col width="30%">
-                    <col width="25%">
-                    <col width="25%">
+                    <col width="10%">
+                    <col width="10%">
+                    <col width="10%">
                 </colgroup>
                 <thead>
                     <tr class="text-light bg-navy">
-                        <th class="text-center py-1 px-2">الكمية</th>
                         <th class="text-center py-1 px-2">المنتج</th>
+                        <th class="text-center py-1 px-2">الكمية</th>
                         <th class="text-center py-1 px-2">سعر المورد</th>
                         <th class="text-center py-1 px-2">سعر البيع</th>
                         <th class="text-center py-1 px-2"> الربح</th>
@@ -53,12 +54,14 @@ if($qry->num_rows >0){
                         $totalProfit += ( $row['consumer_price'] - $row['cost'] ) * $row['quantity'];
                     ?>
                     <tr>
-                        <td class="py-1 px-2 text-center"><?php echo  ($row['quantity']) ?></td>
-
-                        <td class="py-1 px-2">
+                    <td class="py-1 px-2">
                             <?php echo $row['name'] ?> <br>
                             <?php echo $row['description'] ?>
                         </td>
+
+                    <td class="py-1 px-2 text-center"><?php echo  ($row['quantity']) ?></td>
+
+                     
                         <td class="py-1 px-2 text-right"><?php echo number_format($row['cost']) ?></td>
                         <td class="py-1 px-2 text-right"><?php echo number_format($row['consumer_price']) ?></td>
                         <td class="py-1 px-2 text-right"><?php echo number_format(($row['consumer_price'] - $row['cost']) * $row['quantity'] )   ?></td>

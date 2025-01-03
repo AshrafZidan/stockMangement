@@ -26,7 +26,7 @@
             <span class="info-box-text">مرتجعات المورد</span>
             <span class="info-box-number text-right">
                 <?php 
-                    echo $conn->query("SELECT * FROM `back_order_list`")->num_rows;
+                    echo $conn->query("SELECT * FROM `return_list`")->num_rows;
                 ?>
             </span>
             </div>

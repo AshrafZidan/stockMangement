@@ -62,7 +62,7 @@ if(isset($_GET['id'])){
                                     $cost_arr[$row['id']] = $row['cost'];
                                 endwhile;
                             ?>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="item_id" class="control-label">المنتج</label>
                                 <select  id="item_id" class="custom-select ">
@@ -70,21 +70,21 @@ if(isset($_GET['id'])){
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="unit" class="control-label">الوحدة</label>
                                 <input type="text" class="form-control rounded-0" id="unit">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-1">
                             <div class="form-group">
                                 <label for="qty" class="control-label">الكمية</label>
                                 <input type="number" step="any" class="form-control rounded-0" id="qty">
                             </div>
                         </div>
-                        <div class="col-md-2 text-center">
+                        <div class="col-md-3 text-center">
                             <div class="form-group">
-                                <button type="button" class="btn btn-flat btn-sm btn-primary" id="add_to_list">اضافة </button>
+                                <button type="button" style='width: 80%;' class="btn btn-flat btn-primary" id="add_to_list">اضافة </button>
                             </div>
                         </div>
                 </fieldset>
@@ -92,18 +92,18 @@ if(isset($_GET['id'])){
                 <table class="table table-striped table-bordered" id="list">
                     <colgroup>
                         <col width="5%">
+                        <col width="40%">
                         <col width="10%">
                         <col width="10%">
-                        <col width="25%">
-                        <col width="25%">
-                        <col width="25%">
+                        <col width="10%">
+                        <col width="10%">
                     </colgroup>
                     <thead>
                         <tr class="text-light bg-navy">
                             <th class="text-center py-1 px-2"></th>
-                            <th class="text-center py-1 px-2">الكمية</th>
-                            <th class="text-center py-1 px-2">الوحدة</th>
                             <th class="text-center py-1 px-2">المنتج</th>
+                            <th class="text-center py-1 px-2">الوحدة</th>
+                            <th class="text-center py-1 px-2">الكمية</th>
                             <th class="text-center py-1 px-2">التكلفة</th>
                             <th class="text-center py-1 px-2">الاجمالى</th>
                         </tr>
@@ -122,6 +122,17 @@ if(isset($_GET['id'])){
                                 <button class="btn btn-outline-danger btn-sm rem_row" type="button"><i class="fa fa-times"></i></button>
                             <?php }?>
                             </td>
+                            
+                            <td class="py-1 px-2 item">
+                            <?php echo $row['name']; ?> <br>
+                            <?php echo $row['description']; ?>
+                            </td>
+
+                            
+                            <td class="py-1 px-2 text-center unit">
+                            <?php echo $row['unit']; ?>
+                            </td>
+
                             <td class="py-1 px-2 text-center qty">
                                 <span class="visible"><?php echo number_format($row['quantity']); ?></span>
                                 <input type="hidden" name="item_id[]" value="<?php echo $row['item_id']; ?>">
@@ -131,13 +142,9 @@ if(isset($_GET['id'])){
                                 <input type="hidden" name="price[]" value="<?php echo $row['price']; ?>">
                                 <input type="hidden" name="total[]" value="<?php echo $row['total']; ?>">
                             </td>
-                            <td class="py-1 px-2 text-center unit">
-                            <?php echo $row['unit']; ?>
-                            </td>
-                            <td class="py-1 px-2 item">
-                            <?php echo $row['name']; ?> <br>
-                            <?php echo $row['description']; ?>
-                            </td>
+                          
+                           
+
                             <td class="py-1 px-2 text-right cost">
                             <?php echo number_format($row['price']); ?>
                             </td>
@@ -216,6 +223,13 @@ if(isset($_GET['id'])){
         <td class="py-1 px-2 text-center">
             <button class="btn btn-outline-danger btn-sm rem_row" type="button"><i class="fa fa-times"></i></button>
         </td>
+
+        <td class="py-1 px-2 item">
+        </td>
+
+        <td class="py-1 px-2 text-center unit">
+        </td>
+
         <td class="py-1 px-2 text-center qty">
             <span class="visible"></span>
             <input type="hidden" name="item_id[]">
@@ -225,10 +239,8 @@ if(isset($_GET['id'])){
             <input type="hidden" name="price[]">
             <input type="hidden" name="total[]">
         </td>
-        <td class="py-1 px-2 text-center unit">
-        </td>
-        <td class="py-1 px-2 item">
-        </td>
+      
+       
         <td class="py-1 px-2 text-right cost">
         </td>
         <td class="py-1 px-2 text-right total">
@@ -236,7 +248,7 @@ if(isset($_GET['id'])){
     </tr>
 </table>
 <script>
-    var items = $.parseJSON('<?php echo json_encode($item_arr) ?>')
+    var items = JSON.parse('<?php echo addslashes(json_encode($item_arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>');
     var costs = $.parseJSON('<?php echo json_encode($cost_arr) ?>')
     
     $(function(){

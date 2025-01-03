@@ -58,7 +58,7 @@ if(isset($_GET['id'])){
                                     $cost_arr[$row['id']] = $row['consumer_price'];
                                 endwhile;
                             ?>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="item_id" class="control-label">المنتج</label>
                                 <select  id="item_id" class="custom-select select2">
@@ -70,7 +70,7 @@ if(isset($_GET['id'])){
                             </div>
                         </div>
                       
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <label for="qty" class="control-label">الكمية</label>
                                 <input type="number" step="any" class="form-control rounded-0" id="qty">
@@ -78,24 +78,25 @@ if(isset($_GET['id'])){
                         </div>
                         <div class="col-md-4 text-center">
                             <div class="form-group">
-                                <button type="button" class="btn btn-flat btn-sm btn-primary" id="add_to_list">اضافة منتج</button>
+                                <button type="button" style="width:60%" class="btn btn-flat  btn-primary" id="add_to_list">اضافة منتج</button>
                             </div>
                         </div>
                 </fieldset>
                 <hr>
                 <table class="table table-striped table-bordered" id="list">
                     <colgroup>
+
                         <col width="5%">
+                        <col width="40%">
                         <col width="10%">
                         <col width="10%">
-                        <col width="25%">
-                        <col width="25%">
+                        <col width="10%">
                     </colgroup>
                     <thead>
                         <tr class="text-light bg-navy">
                             <th class="text-center py-1 px-2"></th>
-                            <th class="text-center py-1 px-2">الكمية</th>
                             <th class="text-center py-1 px-2">المنتج</th>
+                            <th class="text-center py-1 px-2">الكمية</th>
                             <th class="text-center py-1 px-2">التكلفة</th>
                             <th class="text-center py-1 px-2">الاجمالى</th>
                         </tr>
@@ -110,9 +111,16 @@ if(isset($_GET['id'])){
                             $total += $row['total']
                         ?>
                         <tr data-id="<?php echo $row['item_id']; ?>">
+                            
                             <td class="py-1 px-2 text-center">
                                 <button class="btn btn-outline-danger btn-sm rem_row" type="button"><i class="fa fa-times"></i></button>
                             </td>
+
+                            <td class="py-1 px-2 item">
+                            <?php echo $row['name']; ?> <br>
+                            <?php echo $row['description']; ?>
+                            </td>
+
                             <td class="py-1 px-2 text-center qty">
                             <i onclick="increseQty(this)" class="add-icon fa fa-plus"></i>
                                 <span class="visible"> <?php echo  $row['quantity'] ?></span>
@@ -126,10 +134,7 @@ if(isset($_GET['id'])){
                                 <input type="hidden" name="stock_id_id[]" value="<?php echo $row['id']; ?>">
                             </td>
                          
-                            <td class="py-1 px-2 item">
-                            <?php echo $row['name']; ?> <br>
-                            <?php echo $row['description']; ?>
-                            </td>
+                         
                             <td class="py-1 px-2 text-right cost">
                             <?php echo number_format($row['price']); ?>
                             </td>
@@ -194,6 +199,8 @@ if(isset($_GET['id'])){
         <td class="py-1 px-2 text-center">
             <button class="btn btn-outline-danger btn-sm rem_row" type="button"><i class="fa fa-times"></i></button>
         </td>
+        <td class="py-1 px-2 item">
+        </td>
         <td class="py-1 px-2 text-center qty">
             <i onclick="increseQty(this)" class="add-icon fa fa-plus"></i>
             <span class="visible"></span>
@@ -202,10 +209,14 @@ if(isset($_GET['id'])){
             <input type="hidden" name="qty[]">
             <input type="hidden" name="price[]">
             <input type="hidden" name="total[]">
+            <?php if(isset($_GET['id'])): ?>
+            <input type="hidden" name="old_qty[]" value="0">
+            <!-- <input type="hidden" name="stock_id_id[]" value=""> -->
+        <?php endif; ?>
+
         </td>
        
-        <td class="py-1 px-2 item">
-        </td>
+      
         <td class="py-1 px-2 text-right cost">
         </td>
         <td class="py-1 px-2 text-right total">
@@ -213,7 +224,7 @@ if(isset($_GET['id'])){
     </tr>
 </table>
 <script>
-    var items = $.parseJSON('<?php echo json_encode($item_arr) ?>')
+    var items = JSON.parse('<?php echo addslashes(json_encode($item_arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>');
     var costs = $.parseJSON('<?php echo json_encode($cost_arr) ?>')
     var editPage = <?php echo isset($_GET['id']) ? 'true' : 'false'; ?>;
     var removedQty = [];
@@ -359,18 +370,18 @@ if(isset($_GET['id'])){
     }
  
     function addHiddenInputToRemoveAll(_this) {
-    removedQty.push($(_this.closest('tr').find('td')[1]) // Wrap the second <td> in a jQuery object
+    removedQty.push($(_this.closest('tr').find('td')[2]) // Wrap the second <td> in a jQuery object
         .find('input[name="old_qty[]"]').val());
     removedItemId.push(
-        $(_this.closest('tr').find('td')[1]) // Wrap the second <td> in a jQuery object
+        $(_this.closest('tr').find('td')[2]) // Wrap the second <td> in a jQuery object
             .find('input[name="item_id[]"]').val()
     );
     removedPrice.push(
-        $(_this.closest('tr').find('td')[1]) // Wrap the second <td> in a jQuery object
+        $(_this.closest('tr').find('td')[2]) // Wrap the second <td> in a jQuery object
             .find('input[name="price[]"]').val()
     );
     removedTotal.push(
-        $(_this.closest('tr').find('td')[1]) // Wrap the second <td> in a jQuery object
+        $(_this.closest('tr').find('td')[2]) // Wrap the second <td> in a jQuery object
             .find('input[name="total[]"]').val()
     );
 

@@ -27,15 +27,15 @@ if($qry->num_rows >0){
             <h4 class="text-info">المنتجات</h4>
             <table class="table table-striped table-bordered" id="list">
                 <colgroup>
+                   <col width="40%">
                     <col width="10%">
-                    <col width="30%">
-                    <col width="25%">
-                    <col width="25%">
+                    <col width="10%">
+                    <col width="10%">
                 </colgroup>
                 <thead>
                     <tr class="text-light bg-navy">
-                        <th class="text-center py-1 px-2">الكمية</th>
                         <th class="text-center py-1 px-2">المنتج</th>
+                        <th class="text-center py-1 px-2">الكمية</th>
                         <th class="text-center py-1 px-2">السعر</th>
                         <th class="text-center py-1 px-2">الاجمالى</th>
                     </tr>
@@ -62,11 +62,13 @@ if($qry->num_rows >0){
                     ?>
                                 <tr>
 
-                                    <td class="py-1 px-2 text-center"><?php echo  ($row['quantity']) ?></td>
-                                    <td class="py-1 px-2">
+                                <td class="py-1 px-2">
                                         <?php echo htmlspecialchars($row['name']) ?> <br>
                                         <?php echo htmlspecialchars($row['description']) ?>
                                     </td>
+
+                                <td class="py-1 px-2 text-center"><?php echo  ($row['quantity']) ?></td>
+   
                                     <td class="py-1 px-2 text-right">
                                         <?php echo number_format($row['consumer_price'], 2) ?> <!-- تنسيق السعر إلى رقم عشري -->
                                     </td>

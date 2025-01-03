@@ -27,11 +27,12 @@ if($qry->num_rows >0){
             <h4 class="text-info">المنتجات</h4>
             <table class="table table-striped table-bordered" id="list">
                 <colgroup>
-                    <col width="10%">
-                    <col width="10%">
-                    <col width="30%">
-                    <col width="25%">
-                    <col width="25%">
+          
+                        <col width="10%">
+                        <col width="10%">
+                        <col width="40%">
+                        <col width="10%">
+                        <col width="10%">
                 </colgroup>
                 <thead>
                     <tr class="text-light bg-navy">

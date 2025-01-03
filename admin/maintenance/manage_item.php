@@ -55,7 +55,7 @@ if(isset($_GET['id']) && $_GET['id'] > 0){
 <script>
   
 	$(document).ready(function(){
-        $('.select2').select2({placeholder:"Please Select here",width:"relative"})
+        $('.select2').select2({placeholder:"اختر من هنا",width:"relative"})
 		$('#item-form').submit(function(e){
 			e.preventDefault();
             var _this = $(this)
