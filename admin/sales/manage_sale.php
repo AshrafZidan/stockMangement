@@ -86,7 +86,7 @@ if(isset($_GET['id'])){
                 <table class="table table-striped table-bordered" id="list">
                     <colgroup>
 
-                        <!-- <col width="5%"> -->
+                        <col width="5%">
                         <col width="40%">
                         <col width="10%">
                         <col width="10%">
@@ -94,7 +94,8 @@ if(isset($_GET['id'])){
                     </colgroup>
                     <thead>
                         <tr class="text-light bg-navy">
-                            <!-- <th class="text-center py-1 px-2"></th> -->
+                            
+                            <th class="text-center py-1 px-2"></th>
                             <th class="text-center py-1 px-2">المنتج</th>
                             <th class="text-center py-1 px-2">الكمية</th>
                             <th class="text-center py-1 px-2">التكلفة</th>
@@ -112,10 +113,12 @@ if(isset($_GET['id'])){
                         ?>
                         <tr data-id="<?php echo $row['item_id']; ?>">
                             
-                            <!-- <td class="py-1 px-2 text-center">
+                            <td class="py-1 px-2 text-center">
+                                <?php 
+                                if(! isset($id)):?>
                                 <button class="btn btn-outline-danger btn-sm rem_row" type="button"><i class="fa fa-times"></i></button>
-                            </td> -->
-
+                                <?php endif; ?>
+                            </td>
                             <td class="py-1 px-2 item">
                             <?php echo $row['name']; ?> <br>
                             <?php echo $row['description']; ?>
@@ -150,7 +153,7 @@ if(isset($_GET['id'])){
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th class="text-right py-1 px-2" colspan="3">
+                            <th class="text-right py-1 px-2" colspan="4">
                                 الاجمالى
                                 <input type="hidden" name="amount" value="<?php echo isset($discount) ? $discount : 0 ?>">
                             </th>
@@ -159,7 +162,7 @@ if(isset($_GET['id'])){
 
                        
                         <tr>
-                            <th class="text-right py-1 px-2" colspan="3">
+                            <th class="text-right py-1 px-2" colspan="4">
                                 المدفوع
                                 <input type="hidden" name="paid" value="<?php echo isset($paid) ? $paid : 0 ?>">
                             </th>
@@ -169,7 +172,7 @@ if(isset($_GET['id'])){
                         </tr>
 
                         <tr>
-                        <th class="text-right py-1 px-2" colspan="3 ">
+                        <th class="text-right py-1 px-2" colspan="4">
                             المتبقى
                             <input type="hidden" name="remaining" value="<?php echo isset($remaining) ? $remaining : 0 ?>">
                         </th>

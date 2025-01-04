@@ -934,6 +934,118 @@ Class Master extends DBConnection {
 
 	}
 
+
+
+
+
+
+	function return_sale_item_to_stock(){
+	
+		$itemId = isset($_POST['itemId']) ? $_POST['itemId'] : null;
+		$quantity = isset($_POST['quantity']) ? $_POST['quantity'] : null;
+		$stockId = isset($_POST['stockId']) ? $_POST['stockId'] : null;
+		$saleId = isset($_POST['sale_id']) ? $_POST['sale_id'] : null;
+		$total_price = isset($_POST['total_price']) ? $_POST['total_price'] : null;
+
+	
+		
+		// Validate that all required data is present
+		if (empty($itemId) || empty($quantity) || empty($stockId) || empty($saleId) || empty($total_price)) {
+			$resp['status'] = 'failed';
+			$resp['error'] = "خطأ: بيانات ناقصة.";
+			return json_encode($resp);
+		}
+		
+		
+
+
+
+				$sql_get_exist_stock = "SELECT * FROM stock_list WHERE item_id = '{$itemId}' AND id = '{$stockId}' AND quantity = '{$quantity}' AND type = '2'";
+				$get_exist_stock = $this->conn->query($sql_get_exist_stock);
+
+				if ($get_exist_stock && $get_exist_stock->num_rows > 0) {
+					$row = $get_exist_stock->fetch_assoc();
+					$stock_id = $row['id'];
+
+					$sql_delete_stock = "DELETE FROM stock_list WHERE item_id = '{$itemId}' AND id = '{$stockId}' AND quantity = '{$quantity}' AND type = '2'";
+					$delete_stock = $this->conn->query($sql_delete_stock);
+
+					$sql_select_sale = "SELECT amount, remaining , paid FROM `sales_list` WHERE id = '{$saleId}'";
+					$select_sale = $this->conn->query($sql_select_sale);
+					
+					if ($delete_stock) {
+
+						if ($select_sale && $select_sale->num_rows > 0) {
+							$sale_data = $select_sale->fetch_assoc();
+							$current_amount = $sale_data['amount'];
+							$current_remaining = $sale_data['remaining'];
+							$paid = $sale_data['paid'];
+						} else {
+							// Handle error: sale not found or query failed
+							$resp['status'] = 'failed';
+							$resp['msg'] = "Sale not found.";
+							return json_encode($resp);
+						}
+											
+						$new_amount = $current_amount - $total_price;
+						$new_remaining = $new_amount - $paid; // Calculate remaining balance
+
+
+						$sql = "UPDATE `sales_list` 
+								SET stock_ids = TRIM(BOTH ',' FROM REPLACE(CONCAT(',', stock_ids, ','), ',{$stockId},', ',')) ,
+								amount = $new_amount ,
+		                        remaining = {$new_remaining}
+								WHERE id = '{$saleId}' AND FIND_IN_SET('{$stockId}', stock_ids) > 0";
+						$result = $this->conn->query($sql);
+
+						if ($this->conn->error) {
+							$resp['status'] = 'failed';
+							$resp['msg'] = "Error updating sales_list: " . $this->conn->error;
+							return json_encode($resp);
+						}else{
+
+						
+							$resp['status'] = 'success';
+							$resp['msg'] = 'success';
+
+							return json_encode($resp); 
+						}
+					} else {
+						$resp['status'] = 'failed';
+						$resp['msg'] = "Error deleting stock for item_id: {$item_id}";
+						return json_encode($resp);
+					}
+				} else {
+					$resp['status'] = 'failed';
+					$resp['msg'] = "No stock found with type '2' for item_id: {$item_id}";
+					return json_encode($resp);
+				}
+				
+				// $resp['status'] = 'failed';
+				// $resp['msg'] = 'An error occurred:  {$item_id}';
+	
+			// }
+
+
+	}
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	function edit_items_supplier_price() {
 		extract($_POST); // استخراج القيم من POST
 	
@@ -998,6 +1110,8 @@ Class Master extends DBConnection {
 	
 		return json_encode($resp);
 	}
+
+
 }
 
 $Master = new Master();
@@ -1046,6 +1160,10 @@ switch ($action) {
 	case 'delete_sale':
 		echo $Master->delete_sale();
 	break;
+	case 'return_sale_item_to_stock':
+		echo $Master->return_sale_item_to_stock();
+	break;
+	
 	default:
 		// echo $sysset->index();
 		break;

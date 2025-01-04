@@ -36,7 +36,9 @@
                         $i = 1;
                         $qry = $conn->query("SELECT * FROM `sales_list` order by `date_updated` desc");
                         while($row = $qry->fetch_assoc()):
-                            $row['items'] = count(explode(',',$row['stock_ids']));
+                            // $row['items'] = count(explode(',',$row['stock_ids']));
+                            $row['items'] = !empty($row['stock_ids']) ? count(explode(',', $row['stock_ids'])) : 0;
+
                         ?>
                             <tr>
                                 <td class="text-center"><?php echo $i++; ?></td>
@@ -48,6 +50,11 @@
                                 <td class="text-right"><?php echo number_format($row['items']) ?></td>
                                 <td class="text-right"><?php echo number_format($row['amount'],2) ?></td>
                                 <td align="center">
+                                    <?php 
+                                    if ( $row['items'] > 0):
+                                        ?>
+                                    
+                                    <div >
                                     <button type="button" class="btn btn-flat btn-default btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown">
                                             اجراء
                                         <span class="sr-only"></span>
@@ -58,9 +65,11 @@
                                         <a class="dropdown-item" href="<?php echo base_url.'admin?page=sales/view_sale&id='.$row['id'] ?>" data-id="<?php echo $row['id'] ?>"><span class="fa fa-eye text-dark"></span> عرض</a>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="<?php echo base_url.'admin?page=sales/manage_sale&id='.$row['id'] ?>" data-id="<?php echo $row['id'] ?>"><span class="fa fa-edit text-primary"></span> تعديل</a>
-                                        <!-- <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item delete_data" href="javascript:void(0)" data-id="<?php echo $row['id'] ?>"><span class="fa fa-trash text-danger"></span> مسح</a> -->
+                                       <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item return_item"  href="javascript:void(0)" data-id="<?php echo $row['id'] ?>"><span class="fa fa-undo text-danger"></span> ارجاع منتج</a>
                                     </div>
+                                    <div>
+                                       <?php endif ?> 
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -72,6 +81,11 @@
 </div>
 <script>
 	$(document).ready(function(){
+
+        $('.return_item').click(function(){
+			uni_modal("<i class='fa fa-undo'></i>   ارجاع منتجات للمخزن  ", "sales/return_sale_item.php?id="+$(this).attr('data-id'),"mid-large");
+		})
+
 		$('.delete_data').click(function(){
 			_conf("هل انت متأكد من مسح الفاتورة?","delete_sale",[$(this).attr('data-id')])
 		})
